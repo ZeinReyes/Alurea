@@ -23,15 +23,17 @@ function App() {
 
   return (
     <Routes>
+      {/* Public / Auth routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
 
+      {/* Client pages (accessible to everyone, including admin) */}
       <Route path="/" element={<Layout />}>
         <Route index element={<ClientPage />} />
         <Route path="products" element={<ClientProductPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/orders" element={<OrderPage />} />
+        <Route path="cart" element={<CartPage />} />
+        <Route path="orders" element={<OrderPage />} />
       </Route>
 
       <Route path="/profile" element={<ProfilePage />} />
@@ -39,21 +41,46 @@ function App() {
       <Route path="product/:id" element={<ProductDetails />} />
       <Route path="/track-order/:orderId" element={<OrderTrackingPage />} />
 
-      {user?.role === 'admin' && (
-        <Route path="/admin" element={<AdminPage />} />
-      )}
+      {/* Admin-only route protection */}
+      <Route
+        path="/admin"
+        element={
+          user ? (
+            user.role === 'admin' ? (
+              <AdminPage />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
 
-      {user?.role === 'rider' && (
-        <Route path="/rider/orders" element={<RiderOrders />} />
-      )}
+      {/* Rider-only route protection */}
+      <Route
+        path="/rider/orders"
+        element={
+          user ? (
+            user.role === 'rider' ? (
+              <RiderOrders />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
 
+      {/* Fallback redirect */}
       <Route
         path="*"
         element={
           user ? (
-            user?.role === 'admin' ? (
+            user.role === 'admin' ? (
               <Navigate to="/admin" />
-            ) : user?.role === 'rider' ? (
+            ) : user.role === 'rider' ? (
               <Navigate to="/rider/orders" />
             ) : (
               <Navigate to="/" />
