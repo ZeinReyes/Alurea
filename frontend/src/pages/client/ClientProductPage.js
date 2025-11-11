@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Row, Col, Card, Button, Form, InputGroup, Dropdown } from 'react-bootstrap';
+import { Row, Col, Card, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-import { FaShoppingCart, FaSearch, FaFilter } from 'react-icons/fa';
+import { FaShoppingCart, FaSearch, FaEye } from 'react-icons/fa';
 import './ClientProductPage.css';
 
 const ClientProductPage = () => {
     const [products, setProducts] = useState([]);
     const [filtered, setFiltered] = useState([]);
-    const [search, setSearch] = useState('');
-    const [brandFilter, setBrandFilter] = useState('');
-    const [priceFilter, setPriceFilter] = useState('');
+    const [search, setSearch] = useState('');   
+    const [typeFilter, setTypeFilter] = useState([]);
+    const [materialFilter, setMaterialFilter] = useState([]);
+    const [priceRange, setPriceRange] = useState([0, 100000]);
+    const [visibleCount, setVisibleCount] = useState(9); // ⬅️ show 9 initially
     const { addToCart } = useCart();
     const navigate = useNavigate();
 
@@ -19,7 +21,7 @@ const ClientProductPage = () => {
         const fetchProducts = async () => {
             try {
                 const res = await axios.get('http://localhost:5000/api/products');
-                const inStockProducts = res.data.filter(p => p.stock > 0); 
+                const inStockProducts = res.data.filter(p => p.stock > 0);
                 setProducts(inStockProducts);
                 setFiltered(inStockProducts);
             } catch (error) {
@@ -32,130 +34,135 @@ const ClientProductPage = () => {
     useEffect(() => {
         let data = [...products];
 
-        if (search) {
-            data = data.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
-        }
-
-        if (brandFilter) {
-            data = data.filter(p => p.brand === brandFilter);
-        }
-
-        if (priceFilter) {
-            const [min, max] = priceFilter.split('-').map(Number);
-            data = data.filter(p => p.price >= min && p.price <= max);
-        }
+        if (search) data = data.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+        if (typeFilter.length > 0) data = data.filter(p => typeFilter.includes(p.type));
+        if (materialFilter.length > 0) data = data.filter(p => materialFilter.includes(p.material));
+        data = data.filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
         setFiltered(data);
-    }, [search, brandFilter, priceFilter, products]);
+        setVisibleCount(9); // ⬅️ reset to 9 when filters/search change
+    }, [search, typeFilter, materialFilter, priceRange, products]);
 
-    const handleAddToCart = (product) => {
-        addToCart(product);
-        console.log('Added to cart:', product);
+    const handleAddToCart = (product) => addToCart(product);
+
+    const handleCheckboxChange = (value, setFunc, current) => {
+        if (current.includes(value)) {
+            setFunc(current.filter(i => i !== value));
+        } else {
+            setFunc([...current, value]);
+        }
     };
 
-    const handleSort = (order) => {
-        const sorted = [...filtered].sort((a, b) =>
-            order === 'low-high' ? a.price - b.price : b.price - a.price
-        );
-        setFiltered(sorted);
-    };
+    const loadMore = () => setVisibleCount(prev => prev + 9); // ⬅️ load 9 more
 
     return (
-        <div className="container py-5 mt-5">
-            <Row className="mt-5 mb-4 d-flex align-items-center">
-                <Col md={11}>
-                    <InputGroup className='w-100'>
-                        <InputGroup.Text className="bg-white py-3 border-0 rounded-start-pill">
-                            <FaSearch />
-                        </InputGroup.Text>
-                        <Form.Control
-                            placeholder="Search for a watch"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="border-0 rounded-end-pill"
-                        />
-                    </InputGroup>
-                </Col>
-
-                <Col md="auto">
-                    <Dropdown align="end">
-                        <Dropdown.Toggle variant="dark" className="rounded-pill px-4">
-                            <FaFilter />
-                        </Dropdown.Toggle>
-
-                        <Dropdown.Menu className="shadow p-3" style={{ minWidth: '250px' }}>
-                            <div className="mb-2">
-                                <Form.Label><strong>Filter by Brand</strong></Form.Label>
-                                <Form.Select
-                                    value={brandFilter}
-                                    onChange={(e) => setBrandFilter(e.target.value)}
-                                >
-                                    <option value="">All Brands</option>
-                                    <option>Rolex</option>
-                                    <option>Patek Philippe</option>
-                                    <option>Audemars Piguet</option>
-                                    <option>Cartier</option>
-                                </Form.Select>
-                            </div>
-                            <div>
-                                <Form.Label><strong>Sort by Price</strong></Form.Label>
-                                <Form.Select onChange={(e) => handleSort(e.target.value)}>
-                                    <option value="">None</option>
-                                    <option value="low-high">Low to High</option>
-                                    <option value="high-low">High to Low</option>
-                                </Form.Select>
-                            </div>
-                        </Dropdown.Menu>
-                    </Dropdown>
-                </Col>
-            </Row>
-
+        <div className="client-store-container">
             <Row>
-                {filtered.length === 0 ? (
-                    <Col>
-                        <p className="text-center text-muted">No products found.</p>
-                    </Col>
-                ) : (
-                    filtered.map((product) => (
-                        <Col md={4} lg={3} className="mb-4" key={product._id}>
-                            <Card className="shadow-sm border-light rounded product-card">
-                                <Card.Img
-                                    variant="top"
-                                    src={product.image || 'https://via.placeholder.com/300x300'}
-                                    className="card-image"
-                                />
-                                <Card.Body>
-                                    <Card.Title className="h5 text-dark">{product.name}</Card.Title>
-                                    <Card.Text className="text-muted mb-1">
-                                        <strong>Brand:</strong> {product.brand}
-                                    </Card.Text>
-                                    <Card.Text className="text-success mb-2">
-                                        <strong>Stock:</strong> {product.stock}
-                                    </Card.Text>
-                                    <Card.Text className="text-dark">
-                                        <strong>Price:</strong> ₱{product.price.toLocaleString()}
-                                    </Card.Text>
-                                    <div className="d-flex justify-content-between align-items-center">
-                                        <Button
-                                            variant="dark"
-                                            className="w-75 rounded-pill me-3"
-                                            onClick={() => navigate(`/product/${product._id}`)}
-                                        >
-                                            View Details
+                <Col md={3}>
+                    <div className="filter-wrapper">
+                        <div className="filter-search-box">
+                            <FaSearch className="filter-search-icon" />
+                            <Form.Control
+                                placeholder="Search Products..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="filter-search-input"
+                            />
+                        </div>
+
+                        <h5 className="filter-label-title">Filters</h5>
+                        <div className="filter-section">
+                            <p className="filter-section-title">Type</p>
+                            {["Necklace", "Ring", "Bracelet", "Earrings", "Set"].map(t => (
+                                <label key={t} className="filter-option">
+                                    <input
+                                        type="checkbox"
+                                        value={t}
+                                        checked={typeFilter.includes(t)}
+                                        onChange={() => handleCheckboxChange(t, setTypeFilter, typeFilter)}
+                                    />
+                                    {t}
+                                </label>
+                            ))}
+                        </div>
+
+                        <div className="filter-section">
+                            <p className="filter-section-title">Materials</p>
+                            {["Gold", "Silver", "Platinum", "Rose Gold", "White Gold", "Titanium"].map(m => (
+                                <label key={m} className="filter-option">
+                                    <input
+                                        type="checkbox"
+                                        value={m}
+                                        checked={materialFilter.includes(m)}
+                                        onChange={() => handleCheckboxChange(m, setMaterialFilter, materialFilter)}
+                                    />
+                                    {m}
+                                </label>
+                            ))}
+                        </div>
+
+                        <div className="price-range">
+                            <p className="filter-section-title">
+                                Price Range: ₱{priceRange[0].toLocaleString()} - ₱{priceRange[1].toLocaleString()}
+                            </p>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100000"
+                                step="500"
+                                value={priceRange[1]}
+                                onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+                            />
+                        </div>
+                    </div>
+                </Col>
+
+                <Col md={9}>
+                    <Row>
+                        {filtered.slice(0, visibleCount).map(product => (
+                            <Col md={6} lg={4} className="mb-4" key={product._id}>
+                                <Card className="product-card">
+                                    <div className="product-image-container">
+                                        <Card.Img
+                                            src={product.image || 'https://via.placeholder.com/300'}
+                                            className="product-image"
+                                        />
+                                    </div>
+
+                                    <Card.Body className="product-body">
+                                        <Card.Title className="product-name">{product.name}</Card.Title>
+                                        <Card.Text className="product-type-material">
+                                            {product.type} | {product.material}
+                                        </Card.Text>
+                                        <Card.Text className="product-price">
+                                            ₱{product.price.toLocaleString()}
+                                        </Card.Text>
+                                        <Card.Text className="product-stock">
+                                            Stock: {product.stock}
+                                        </Card.Text>
+                                    </Card.Body>
+
+                                    <div className="product-buttons">
+                                        <Button className="btn-view-icon" onClick={() => navigate(`/product/${product._id}`)}>
+                                            <FaEye />
                                         </Button>
-                                        <Button
-                                            variant="outline-dark"
-                                            className="w-25 rounded-pill"
-                                            onClick={() => handleAddToCart(product)}
-                                        >
-                                            <FaShoppingCart />
+                                        <Button className="btn-cart-full" onClick={() => handleAddToCart(product)}>
+                                            ADD TO CART
                                         </Button>
                                     </div>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                    ))
-                )}
+                                </Card>
+                            </Col>
+                        ))}
+                    </Row>
+
+                    {visibleCount < filtered.length && (
+                        <div className="text-center mt-4">
+                            <Button variant="secondary" onClick={loadMore}>
+                                Load More
+                            </Button>
+                        </div>
+                    )}
+                </Col>
             </Row>
         </div>
     );

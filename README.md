@@ -1,37 +1,41 @@
-# 📦 Dialuxe – Luxury Watch Ecommerce Platform
+# 💎 Alurea – Fine Jewelry Online Store
 
-Dialuxe is a full-stack MERN (MongoDB, Express, React, Node.js) eCommerce platform focused on showcasing and delivering high-end luxury watches. Unlike typical marketplaces, Dialuxe operates as a single-vendor store—**the company is the exclusive seller**. The platform supports three primary user roles: **Client**, **Admin**, and **Rider**.
+Alurea is a full-stack **MERN (MongoDB, Express, React, Node.js)** eCommerce platform designed to showcase and deliver elegant fine jewelry pieces.  
+Unlike multi-vendor marketplaces, **Alurea** operates as a **single-vendor store** — meaning the company itself manages all listings, inventory, and deliveries.
+
+The platform supports three user roles: **Client**, **Admin**, and **Rider**, each with tailored features to ensure a seamless and efficient shopping experience.
 
 ---
 
 ## 🚀 Features
 
-### 🛍 Clients
-- Browse luxury watches with detailed specs and images.
-- Add items to cart and proceed to checkout.
-- Track orders in real-time via integrated maps.
+### 👩‍💻 Clients
+- Browse curated collections of fine jewelry with detailed specifications and high-resolution images.  
+- Add items to cart and proceed to order confirmation (no online payment — handled externally).  
+- Track orders in real time via an integrated live map.  
+- Secure login and registration using JWT-based authentication.
 
-### ⚙️ Admin
-- Manage products (CRUD operations).
-- View user accounts and assign roles.
-- Monitor and log product updates.
+### 🛠️ Admin
+- Manage products (Create, Read, Update, Delete).  
+- View all users and assign roles (Client, Admin, Rider).  
+- Monitor product updates and user activities.
 
-### 🛵 Rider
-- View assigned deliveries.
-- Update delivery status.
-- Send real-time location updates for order tracking.
+### 🚚 Rider
+- View assigned deliveries.  
+- Update delivery and order status.  
+- Send real-time location updates for live order tracking.
 
 ---
 
 ## 🧰 Tech Stack
 
-- **Frontend:** React, React Router, Bootstrap, Leaflet
-- **Backend:** Node.js, Express.js
-- **Database:** MongoDB
-- **Real-time Communication:** Socket.io
-- **Maps & Routing:** Leaflet + OpenRouteService API + LocationIQ API
-- **Authentication:** JWT-based auth
-- **Styling:** Bootstrap 5
+- **Frontend:** React, React Router, Bootstrap  
+- **Backend:** Node.js, Express.js  
+- **Database:** MongoDB  
+- **Real-time Updates:** Socket.io  
+- **Maps & Routing:** Leaflet + OpenRouteService API + LocationIQ API  
+- **Authentication:** Secure JWT-based authentication  
+- **Styling:** Bootstrap 5  
 
 ---
 
@@ -39,7 +43,7 @@ Dialuxe is a full-stack MERN (MongoDB, Express, React, Node.js) eCommerce platfo
 
 1. **Clone the repository**
 - git clone https://github.com/yourusername/dialuxe.git
-- cd dialuxe
+- cd Alurea
 2. **Install dependencies**
 - cd backend && npm install
 - cd ../frontend && npm install

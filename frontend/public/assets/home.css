@@ -1,68 +1,124 @@
+/* Reset */
 * {
     padding: 0;
     margin: 0;
     box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
 }
 
-.hero {
+/* HERO SECTION */
+.hero-section {
+    position: relative;
     height: 100vh;
-    padding: 50px 0 0;
-    width: 75%;
-    margin: 20px auto 0;
-}
-
-.hero-container {
-    width: 120%;
-    height: 85%;
-    background-image: url(../assets/images/hero-image.jpg);
+    background-image: url('https://via.placeholder.com/1600x900?text=Luxury+Jewellery+Hero');
     background-size: cover;
-    border-radius: 20px;
-}
-
-.about-us {
-    width: 100%;
-    height: 100vh;
-    padding: 50px 0 0;
-}
-
-.about-us-description {
-    margin: 80px 0 0;
-}
-
-.about-us h2 {
-    font-size: 60px;
-}
-
-.about-us p {
-    width: 40%;
-    font-size: 16px;
-}
-
-.about-us-image {
-    width: 100%;
-    height: 60%;
+    background-position: center;
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
-.about-us-image .image1 {
-    background-color: black;
-    width: 95%;
-    height: 95%;
-    background-image: url(../assets/images/about-image1.jpg);
-    background-size: cover;
-}
-
-.about-image .image2 {
-    background-color: red;
-    width: 700px;
-    height: 400px;
-    overflow: auto;
-    z-index: 100;
+.hero-overlay {
     position: absolute;
-    top: calc(100vh + 140px);
-    right: 70px;
-    background-image: url(../assets/images/about-image2.jpg);
-    background-size: cover;
-    border: 5px solid #f5f5f5;
+    width: 100%;
+    height: 100%;
+    background: rgba(2, 31, 57, 0.6); /* dark overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 0 20px;
+}
+
+.hero-title {
+    font-size: 3rem;
+    color: #fff;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.hero-subtitle {
+    font-size: 1.4rem;
+    color: #e9e9e9;
+    margin-bottom: 30px;
+    max-width: 800px;
+    line-height: 1.4;
+}
+
+.hero-cta {
+    padding: 14px 34px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    background: #b38728;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.hero-cta:hover {
+    background: #d4af37;
+}
+
+/* ABOUT US SECTION */
+.about-us-section {
+    padding: 100px 20px;
+    background: #f8f9fa;
+}
+
+.about-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 40px;
+}
+
+.about-text {
+    flex: 1;
+    min-width: 300px;
+}
+
+.about-text h2 {
+    font-size: 2.5rem;
+    color: #021f39;
+    margin-bottom: 20px;
+}
+
+.about-text p {
+    font-size: 1.1rem;
+    color: #555;
+    line-height: 1.7;
+    max-width: 600px;
+}
+
+.about-image {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.about-image img {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* SHOWCASE SECTION */
+.secondary-image-section {
+    width: 100%;
+    overflow: hidden;
+}
+
+.secondary-image-section img {
+    width: 100%;
+    max-height: 500px;
+    object-fit: cover;
+    display: block;
 }

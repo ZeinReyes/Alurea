@@ -1,33 +1,82 @@
-import Footer from "../../components/Footer";
+import React from 'react';
+import Navbar from '../../components/CustomNavbar';
+import Footer from '../../components/Footer';
+import './ClientDashboard.css';
 
 function ClientDashboard() {
-    return (
-        <main>
-            <div className="hero d-flex justify-content-center align-items-center mx-auto flex-column">
-               <div className="hero-container">
-                    <div className="hero-content text-center d-flex justify-content-center align-items-center flex-column">
-                        <h1 className="text-center text-light pt-4 mt-5">TIMELESS ELEGANCE</h1>
-                        <p className="text-center text-light fs-4 w-50">Explore our curated collection of premium watches for every style and collector.</p>
-                    </div>
-               </div>
+  return (
+    <div>
+      <Navbar />
+
+      <main className="hero-section">
+        <div className="hero-content mt-5">
+          <h1>
+            Timeless <span className="highlight">Elegance</span>, 
+            Crafted Just for You.
+          </h1>
+          <p>
+            Discover the art of fine jewelry with <span className="highlight">Alurea</span> — 
+            where every piece tells a story of beauty, brilliance, and craftsmanship.
+          </p>
+          <div className="hero-buttons">
+            <button className="button btn-primary">Shop Now</button>
+            <button className="button btn-secondary">View Collections</button>
+          </div>
+        </div>
+
+        <div className="hero-images">
+          <div className="hero-necklace"></div>
+          <div className="hero-ring"></div>
+        </div>
+      </main>
+
+      <section className="features-section">
+        <div className="features-header">
+          <h2>Experience the Essence of Luxury</h2>
+          <p>
+            From radiant diamonds to exquisite gold craftsmanship, Alurea delivers
+            timeless pieces that celebrate your unique brilliance.
+          </p>
+        </div>
+
+        <div className="features-grid">
+          <div className="feature-card">
+            <div className="feature-icon">
+              <i className="bi bi-gem"></i>
             </div>
-            <div className="about-us">
-                <div className="about-us-description d-flex">
-                    <div className="about-us-text d-flex flex-column justify-content-center align-items-start">
-                        <h2 className="ms-5">About Us</h2>
-                        <p className="ms-5">At Dialuxe, we connect watch lovers with authentic, luxury timepieces. Curated for style and quality, our marketplace offers a seamless shopping experience for collectors and modern buyers alike. Every piece tells a story—start yours with us.</p>
-                    </div>
-                    <div className="about-image d-flex flex-column justify-content-center align-items-center">
-                        <img className="image2" />
-                    </div>
-                </div>
-                <div className="about-us-image d-flex flex-column justify-content-center align-items-center">
-                    <img className="image1" />
-                </div>
+            <h4>Finest Craftsmanship</h4>
+            <p>
+              Every design is meticulously handcrafted to perfection, 
+              blending artistry with precision.
+            </p>
+          </div>
+
+          <div className="feature-card">
+            <div className="feature-icon">
+              <i className="bi bi-heart"></i>
             </div>
-            <Footer />
-        </main>
-    );
+            <h4>Ethically Sourced</h4>
+            <p>
+              Our materials are responsibly and ethically sourced to ensure 
+              every sparkle comes with integrity.
+            </p>
+          </div>
+
+          <div className="feature-card">
+            <div className="feature-icon">
+              <i className="bi bi-star"></i>
+            </div>
+            <h4>Custom Creations</h4>
+            <p>
+              Bring your vision to life with bespoke designs tailored to your story and style.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  );
 }
 
 export default ClientDashboard;

@@ -1,6 +1,7 @@
 import Product from '../models/Product.js';
 import ProductLog from '../models/ProductLog.js';
 
+// 🟢 Get all products
 export const getProducts = async (req, res) => {
     try {
         const products = await Product.find();
@@ -10,6 +11,7 @@ export const getProducts = async (req, res) => {
     }
 };
 
+// 🟢 Get product by ID
 export const getProductById = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
@@ -23,25 +25,29 @@ export const getProductById = async (req, res) => {
     }
 };
 
+// 🟢 Create new product
 export const createProduct = async (req, res) => {
-    const { name, price, stock, brand, adminEmail } = req.body;
+    const { name, description, type, material, price, stock, adminEmail } = req.body;
 
     try {
         const product = new Product({
             name,
-            brand,
+            description,
+            type,
+            material,
             price: parseFloat(price),
             stock: parseInt(stock),
         });
 
         const createdProduct = await product.save();
 
+        // Log creation
         try {
             await ProductLog.create({
                 action: 'CREATE_PRODUCT',
                 performedBy: adminEmail || 'Unknown Admin',
                 targetProduct: createdProduct.name,
-                details: `Created product "${createdProduct.name}".`,
+                details: `Created product "${createdProduct.name}" (${createdProduct.type}).`,
             });
         } catch (logError) {
             console.error('Logging failed:', logError.message);
@@ -53,6 +59,7 @@ export const createProduct = async (req, res) => {
     }
 };
 
+// 🟢 Update existing product
 export const updateProduct = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
@@ -82,14 +89,18 @@ export const updateProduct = async (req, res) => {
         if (req.body.stock && req.body.stock !== originalProduct.stock) {
             changes.push(`Stock: changed from ${originalProduct.stock} to ${req.body.stock}`);
         }
-        if (req.body.brand && req.body.brand !== originalProduct.brand) {
-            changes.push(`Brand: changed from "${originalProduct.brand}" to "${req.body.brand}"`);
+        if (req.body.type && req.body.type !== originalProduct.type) {
+            changes.push(`Type: changed from "${originalProduct.type}" to "${req.body.type}"`);
+        }
+        if (req.body.material && req.body.material !== originalProduct.material) {
+            changes.push(`Material: changed from "${originalProduct.material}" to "${req.body.material}"`);
         }
 
         const detailMessage = changes.length > 0
             ? changes.join(', ')
             : `Product "${originalProduct.name}" was updated (no significant changes).`;
 
+        // Log update
         try {
             await ProductLog.create({
                 action: 'UPDATE_PRODUCT',
@@ -107,6 +118,7 @@ export const updateProduct = async (req, res) => {
     }
 };
 
+// 🟢 Delete product
 export const deleteProduct = async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
@@ -116,6 +128,7 @@ export const deleteProduct = async (req, res) => {
 
         await product.deleteOne();
 
+        // Log deletion
         try {
             await ProductLog.create({
                 action: 'DELETE_PRODUCT',

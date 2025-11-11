@@ -14,11 +14,11 @@ const sendVerificationEmail = async (email, verificationToken) => {
     });
 
     const mailOptions = {
-        from: '"Dialuxe" <your-email@gmail.com>',
+        from: '"Alurea" <your-email@gmail.com>',
         to: email,
-        subject: 'Verify your Email for Dialuxe',
+        subject: 'Verify your Email for Alurea',
         html: `
-            <h2>Welcome to Dialuxe!</h2>
+            <h2>Welcome to Alurea!</h2>
             <p>Please click on the link below to verify your email address:</p>
             <a href="http://localhost:3000/verify-email?token=${verificationToken}">Verify your Email</a>
             <p>This link will expire in 1 hour.</p>
@@ -98,19 +98,19 @@ const sendOtpEmail = async (email, otp) => {
     });
 
     const mailOptions = {
-        from: '"Dialuxe Support" <your-email@gmail.com>',
+        from: '"Alurea Support" <your-email@gmail.com>',
         to: email,
-        subject: '🔐 Dialuxe OTP Verification Code',
+        subject: '🔐 Alurea OTP Verification Code',
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
-                <h2 style="color: #c5a100;">Dialuxe Verification</h2>
+                <h2 style="color: #c5a100;">Alurea Verification</h2>
                 <p>Hi there,</p>
-                <p>You recently attempted to log in to your Dialuxe account. Please use the following One-Time Password (OTP) to complete your login:</p>
+                <p>You recently attempted to log in to your Alurea account. Please use the following One-Time Password (OTP) to complete your login:</p>
                 <h1 style="letter-spacing: 4px; color: #333;">${otp}</h1>
                 <p>This code will expire in <strong>5 minutes</strong>. Do not share it with anyone.</p>
                 <p>If you did not request this, please ignore this email or contact support immediately.</p>
                 <br />
-                <p style="font-size: 14px; color: #888;">— The Dialuxe Team</p>
+                <p style="font-size: 14px; color: #888;">— The Alurea Team</p>
             </div>
         `,
     };

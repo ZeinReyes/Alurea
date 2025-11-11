@@ -12,7 +12,8 @@ const AdminProductPage = () => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        brand: '',
+        type: '', // product type
+        material: 'Gold', // default material
         price: '',
         stock: '',
         image: '', 
@@ -21,6 +22,7 @@ const AdminProductPage = () => {
     const [editId, setEditId] = useState(null);
     const [error, setError] = useState(null);
 
+    // Fetch products
     const fetchProducts = async () => {
         try {
             const res = await axios.get('http://localhost:5000/api/products');
@@ -30,6 +32,7 @@ const AdminProductPage = () => {
         }
     };
 
+    // Fetch activity logs
     const fetchLogs = async () => {
         try {
             const res = await axios.get('http://localhost:5000/api/products/logs/all');
@@ -58,14 +61,14 @@ const AdminProductPage = () => {
         try {
             const updatedFormData = {
                 ...formData,
-                price: parseFloat(formData.price), 
-                stock: parseInt(formData.stock, 10), 
+                price: parseFloat(formData.price),
+                stock: parseInt(formData.stock, 10),
             };
 
             if (isEditing) {
                 await axios.put(`http://localhost:5000/api/products/${editId}`, {
-                    ...updatedFormData,  
-                    adminEmail: user.email, 
+                    ...updatedFormData,
+                    adminEmail: user.email,
                 });
             } else {
                 await axios.post('http://localhost:5000/api/products', {
@@ -75,11 +78,11 @@ const AdminProductPage = () => {
             }
 
             setShowModal(false);
-            setFormData({ name: '', description: '', brand: '', price: '', stock: '', image: '' });
+            setFormData({ name: '', description: '', type: '', material: 'Gold', price: '', stock: '', image: '' });
             setIsEditing(false);
             setEditId(null);
-            fetchProducts();  
-            fetchLogs();     
+            fetchProducts();
+            fetchLogs();
         } catch (error) {
             setError('Failed to submit product. Please try again later.');
         }
@@ -96,7 +99,7 @@ const AdminProductPage = () => {
         if (window.confirm('Are you sure you want to delete this product?')) {
             try {
                 await axios.delete(`http://localhost:5000/api/products/${id}`, {
-                    data: { adminEmail: user.email }  
+                    data: { adminEmail: user.email }
                 });
                 fetchProducts();
                 fetchLogs();
@@ -120,14 +123,16 @@ const AdminProductPage = () => {
             {error && <div className="alert alert-danger">{error}</div>}
 
             <Row className="mb-3">
-                <Col md={4}><Form.Control placeholder="Search by name or brand" /></Col>
+                <Col md={4}><Form.Control placeholder="Search by name or type" /></Col>
                 <Col md={3}>
                     <Form.Select>
-                        <option value="">Filter by Brand</option>
-                        <option>Rolex</option>
-                        <option>Patek Philippe</option>
-                        <option>Audemars Piguet</option>
-                        <option>Cartier</option>
+                        <option value="">Filter by Material</option>
+                        <option>Gold</option>
+                        <option>Silver</option>
+                        <option>Platinum</option>
+                        <option>Rose Gold</option>
+                        <option>White Gold</option>
+                        <option>Titanium</option>
                     </Form.Select>
                 </Col>
             </Row>
@@ -137,7 +142,8 @@ const AdminProductPage = () => {
                     <tr>
                         <th>#</th>
                         <th>Name</th>
-                        <th>Brand</th>
+                        <th>Type</th>
+                        <th>Material</th>
                         <th>Price</th>
                         <th>Stock</th>
                         <th>Image</th>
@@ -147,14 +153,15 @@ const AdminProductPage = () => {
                 <tbody>
                     {products.length === 0 ? (
                         <tr>
-                            <td colSpan="7" className="text-center">No products yet</td>
+                            <td colSpan="8" className="text-center">No products yet</td>
                         </tr>
                     ) : (
                         products.map((product, idx) => (
                             <tr key={product._id}>
                                 <td>{idx + 1}</td>
                                 <td>{product.name}</td>
-                                <td>{product.brand}</td>
+                                <td>{product.type}</td>
+                                <td>{product.material}</td>
                                 <td>₱{Number(product.price).toLocaleString()}</td>
                                 <td>{product.stock}</td>
                                 <td>
@@ -214,28 +221,46 @@ const AdminProductPage = () => {
                             <Form.Label>Name</Form.Label>
                             <Form.Control name="name" value={formData.name} onChange={handleChange} required />
                         </Form.Group>
+
                         <Form.Group className="mb-2">
                             <Form.Label>Description</Form.Label>
                             <Form.Control name="description" value={formData.description} onChange={handleChange} />
                         </Form.Group>
+
                         <Form.Group className="mb-2">
-                            <Form.Label>Brand</Form.Label>
-                            <Form.Select name="brand" value={formData.brand} onChange={handleChange} required>
-                                <option value="">Choose brand</option>
-                                <option>Rolex</option>
-                                <option>Patek Philippe</option>
-                                <option>Audemars Piguet</option>
-                                <option>Cartier</option>
+                            <Form.Label>Type</Form.Label>
+                            <Form.Select name="type" value={formData.type} onChange={handleChange} required>
+                                <option value="">Select type</option>
+                                <option>Necklace</option>
+                                <option>Ring</option>
+                                <option>Bracelet</option>
+                                <option>Earrings</option>
+                                <option>Set</option>
                             </Form.Select>
                         </Form.Group>
+
+                        <Form.Group className="mb-2">
+                            <Form.Label>Material</Form.Label>
+                            <Form.Select name="material" value={formData.material} onChange={handleChange}>
+                                <option>Gold</option>
+                                <option>Silver</option>
+                                <option>Platinum</option>
+                                <option>Rose Gold</option>
+                                <option>White Gold</option>
+                                <option>Titanium</option>
+                            </Form.Select>
+                        </Form.Group>
+
                         <Form.Group className="mb-2">
                             <Form.Label>Price</Form.Label>
                             <Form.Control type="number" name="price" value={formData.price} onChange={handleChange} required />
                         </Form.Group>
+
                         <Form.Group className="mb-2">
                             <Form.Label>Stock</Form.Label>
                             <Form.Control type="number" name="stock" value={formData.stock} onChange={handleChange} />
                         </Form.Group>
+
                         <Form.Group className="mb-2">
                             <Form.Label>Image URL</Form.Label>
                             <Form.Control type="text" name="image" value={formData.image} onChange={handleChange} placeholder="Enter the image URL" />

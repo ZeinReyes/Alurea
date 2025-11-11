@@ -17,6 +17,7 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
+
 const io = new Server(server, {
     cors: {
         origin: 'http://localhost:3000',
@@ -28,12 +29,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use('/uploads/proofs', express.static(path.join(__dirname, 'uploads/proofs')));
-
 app.use(cors());
 app.use(express.json());
 
 let riderLocation = { lat: 14.6091, lon: 121.0223 };
 io.on('connection', (socket) => {
+    console.log('⚡ New WebSocket connection');
     socket.emit('location', riderLocation);
 
     socket.on('update-location', (newLocation) => {
@@ -41,25 +42,10 @@ io.on('connection', (socket) => {
         io.emit('location', riderLocation);
     });
 
-    socket.on('disconnect', () => { });
-});
-
-const PORT = process.env.PORT || 5000;
-
-mongoose
-    .connect(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    })
-    .then(() => {
-        console.log(`MongoDB connected to ${process.env.MONGO_URI}`);
-        server.listen(PORT, () => {
-            console.log(`Server with WebSocket running on port ${PORT}`);
-        });
-    })
-    .catch((err) => {
-        console.error('MongoDB connection error:', err);
+    socket.on('disconnect', () => {
+        console.log('🔌 WebSocket disconnected');
     });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -70,3 +56,31 @@ app.use('/api/orders', orderRoutes);
 app.get('/api/rider/location', (req, res) => {
     res.json(riderLocation);
 });
+
+const PORT = process.env.PORT || 5000;
+
+// ⚠ Verbose MongoDB connection with events
+if (!process.env.MONGO_URI) {
+    console.error('❌ MONGO_URI is not set in your .env file');
+} else {
+    console.log(`🔗 Attempting to connect to MongoDB at ${process.env.MONGO_URI}`);
+}
+
+mongoose.connection.on('connected', () => console.log('✅ Mongoose connected to DB'));
+mongoose.connection.on('error', (err) => console.error('❌ Mongoose connection error:', err));
+mongoose.connection.on('disconnected', () => console.warn('⚠ Mongoose disconnected'));
+
+mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log('🎉 MongoDB connection successful');
+        server.listen(PORT, () => {
+            console.log(`🚀 Server with WebSocket running on port ${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.error('❌ Failed to connect MongoDB:', err);
+    });
+
+// Extra log to show server initialization
+console.log('🔹 Server script loaded, waiting for DB connection...');

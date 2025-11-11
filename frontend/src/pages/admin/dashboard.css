@@ -36,7 +36,7 @@
 }
 
 .active-link {
-  background-color: gold !important;
+  background-color: #ffd700 !important;
   color: black !important;
   border-radius: 8px;
   font-weight: bold;

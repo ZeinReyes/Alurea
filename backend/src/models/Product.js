@@ -3,10 +3,15 @@ import mongoose from 'mongoose';
 const productSchema = new mongoose.Schema({
     name: { type: String, required: true },
     description: { type: String },
-    brand: {
+    type: {
         type: String,
-        enum: ['Rolex', 'Patek Philippe', 'Audemars Piguet', 'Cartier'],
+        enum: ['Necklace', 'Ring', 'Bracelet', 'Earrings', 'Set'],
         required: true
+    },
+    material: {
+        type: String,
+        enum: ['Gold', 'Silver', 'Platinum', 'Rose Gold', 'White Gold', 'Titanium'],
+        default: 'Gold'
     },
     price: { type: Number, required: true },
     image: { type: String },

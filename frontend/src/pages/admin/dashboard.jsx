@@ -38,7 +38,7 @@ const Dashboard = () => {
       <div className="vh-100 sidebar" style={{ width: '250px' }}>
         <div className="text-center mt-2" onClick={handleH5Click} style={{ cursor: 'pointer' }}>
           <img src="/logo-gold.png" alt="Logo" className="img-fluid" style={{ width: '120px' }} />
-          <h5>Dialuxe</h5>
+          <h5>Alurea</h5>
         </div>
 
         <div className="divider w-75 border-bottom mx-auto"></div>
