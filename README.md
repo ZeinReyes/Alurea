@@ -42,7 +42,7 @@ The platform supports three user roles: **Client**, **Admin**, and **Rider**, ea
 ## 🔧 Setup Instructions
 
 1. **Clone the repository**
-- git clone https://github.com/yourusername/dialuxe.git
+- git clone https://github.com/ZeinReyes/Alurea.git
 - cd Alurea
 2. **Install dependencies**
 - cd backend && npm install
