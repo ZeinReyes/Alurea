@@ -1,175 +1,255 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
-import User from '../models/User.js';
-import crypto from 'crypto';
+import {
+  CognitoIdentityProviderClient,
+  SignUpCommand,
+  ConfirmSignUpCommand,
+  InitiateAuthCommand,
+} from "@aws-sdk/client-cognito-identity-provider";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  GetCommand,
+  UpdateCommand,
+  ScanCommand,
+} from "@aws-sdk/lib-dynamodb";
+import dotenv from "dotenv";
+import nodemailer from "nodemailer";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import { v4 as uuidv4 } from "uuid";
 
-const sendVerificationEmail = async (email, verificationToken) => {
-    const transporter = nodemailer.createTransport({
-        service: 'Gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-    });
+dotenv.config();
 
-    const mailOptions = {
-        from: '"Alurea" <your-email@gmail.com>',
-        to: email,
-        subject: 'Verify your Email for Alurea',
-        html: `
-            <h2>Welcome to Alurea!</h2>
-            <p>Please click on the link below to verify your email address:</p>
-            <a href="http://localhost:3000/verify-email?token=${verificationToken}">Verify your Email</a>
-            <p>This link will expire in 1 hour.</p>
-        `,
-    };
+// ---------------- AWS Clients ----------------
+const cognito = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION });
 
-    await transporter.sendMail(mailOptions);
-};
+const dynamoClient = new DynamoDBClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+const dynamoDB = DynamoDBDocumentClient.from(dynamoClient);
 
-export const register = async (req, res) => {
-    const { name, email, password } = req.body;
-    console.log('Request body:', req.body);
-    try {
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'Email is already in use.' });
-        }
+// ---------------- Constants ----------------
+const USER_TABLE = "Users"; // Users table name in DynamoDB
+const otps = new Map(); // temporary OTP storage
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const newUser = new User({
-            name,
-            email,
-            password: hashedPassword,
-        });
-
-        const verificationToken = crypto.randomBytes(32).toString('hex');
-        newUser.emailVerificationToken = verificationToken;
-        newUser.emailVerificationTokenExpiry = Date.now() + 3600000;
-
-        await newUser.save();
-
-        await sendVerificationEmail(email, verificationToken);
-
-        res.status(201).json({ message: 'Registration successful. Please verify your email.' });
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({ message: 'Something went wrong. Please try again.' });
-    }
-};
-
-export const verifyEmail = async (req, res) => {
-    const { token } = req.query;
-
-    try {
-        const user = await User.findOne({
-            emailVerificationToken: token,
-            emailVerificationTokenExpiry: { $gt: Date.now() },
-        });
-
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid or expired token.' });
-        }
-
-        user.isEmailVerified = true;
-        user.emailVerificationToken = undefined;
-        user.emailVerificationTokenExpiry = undefined;
-
-        await user.save();
-
-        res.status(200).json({ message: 'Email verified successfully. You can now log in.' });
-    } catch (error) {
-        console.error('Verification error:', error);
-        res.status(500).json({ message: 'Something went wrong. Please try again.' });
-    }
-};
-
-const otps = new Map();
-
+// ---------------- Helper: send OTP ----------------
 const sendOtpEmail = async (email, otp) => {
-    const transporter = nodemailer.createTransport({
-        service: 'Gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
+  const transporter = nodemailer.createTransport({
+    service: "Gmail",
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+  });
+
+  await transporter.sendMail({
+    from: '"Alurea Support" <no-reply@alurea.com>',
+    to: email,
+    subject: "🔐 Alurea OTP Verification Code",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
+        <h2 style="color: #c5a100;">Alurea Verification</h2>
+        <p>Please use the following OTP to complete your login:</p>
+        <h1 style="letter-spacing: 4px; color: #333;">${otp}</h1>
+        <p>This code expires in <strong>5 minutes</strong>.</p>
+        <p>If you didn’t request this, ignore this email.</p>
+      </div>
+    `,
+  });
+};
+
+// ---------------- Register ----------------
+export const register = async (req, res) => {
+  const { name, email, password } = req.body;
+  try {
+    // 1️⃣ Cognito signup
+    const command = new SignUpCommand({
+      ClientId: process.env.COGNITO_CLIENT_ID,
+      Username: email,
+      Password: password,
+      UserAttributes: [{ Name: "name", Value: name }],
     });
+    await cognito.send(command);
 
-    const mailOptions = {
-        from: '"Alurea Support" <your-email@gmail.com>',
-        to: email,
-        subject: '🔐 Alurea OTP Verification Code',
-        html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 8px;">
-                <h2 style="color: #c5a100;">Alurea Verification</h2>
-                <p>Hi there,</p>
-                <p>You recently attempted to log in to your Alurea account. Please use the following One-Time Password (OTP) to complete your login:</p>
-                <h1 style="letter-spacing: 4px; color: #333;">${otp}</h1>
-                <p>This code will expire in <strong>5 minutes</strong>. Do not share it with anyone.</p>
-                <p>If you did not request this, please ignore this email or contact support immediately.</p>
-                <br />
-                <p style="font-size: 14px; color: #888;">— The Alurea Team</p>
-            </div>
-        `,
-    };
+    // 2️⃣ Check if user exists in DynamoDB (scan by email)
+    const scanResult = await dynamoDB.send(new ScanCommand({
+      TableName: USER_TABLE,
+      FilterExpression: "#email = :email",
+      ExpressionAttributeNames: { "#email": "email" },
+      ExpressionAttributeValues: { ":email": email },
+    }));
 
-    await transporter.sendMail(mailOptions);
+    if (scanResult.Items?.length === 0) {
+      // Store user with generated id
+      const id = uuidv4();
+      await dynamoDB.send(
+        new PutCommand({
+          TableName: USER_TABLE,
+          Item: {
+            id,
+            email,
+            name,
+            role: "client",
+            isEmailVerified: false,
+            createdAt: new Date().toISOString(),
+          },
+        })
+      );
+    }
+
+    res.status(201).json({ message: "Registration successful. Verify email via Cognito." });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(400).json({ message: error.message });
+  }
 };
 
+// ---------------- Verify Email ----------------
+export const verifyEmailCognito = async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) return res.status(400).json({ message: "Email and code are required." });
+
+  try {
+    await cognito.send(
+      new ConfirmSignUpCommand({
+        ClientId: process.env.COGNITO_CLIENT_ID,
+        Username: email,
+        ConfirmationCode: code,
+      })
+    );
+
+    // Update DynamoDB (scan by email to get id first)
+    const scanResult = await dynamoDB.send(new ScanCommand({
+      TableName: USER_TABLE,
+      FilterExpression: "#email = :email",
+      ExpressionAttributeNames: { "#email": "email" },
+      ExpressionAttributeValues: { ":email": email },
+    }));
+    const user = scanResult.Items[0];
+    if (!user) return res.status(404).json({ message: "User not found in DynamoDB" });
+
+    await dynamoDB.send(
+      new UpdateCommand({
+        TableName: USER_TABLE,
+        Key: { id: user.id },
+        UpdateExpression: "set isEmailVerified = :verified",
+        ExpressionAttributeValues: { ":verified": true },
+      })
+    );
+
+    res.status(200).json({ message: "Email verified successfully!" });
+  } catch (error) {
+    console.error("Email verification error:", error);
+    res.status(400).json({ message: error.message || "Verification failed" });
+  }
+};
+
+// ---------------- Login ----------------
 export const login = async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
+  try {
+    const command = new InitiateAuthCommand({
+      AuthFlow: "USER_PASSWORD_AUTH",
+      ClientId: process.env.COGNITO_CLIENT_ID,
+      AuthParameters: { USERNAME: email, PASSWORD: password },
+    });
+    const response = await cognito.send(command);
+    const accessToken = response.AuthenticationResult.AccessToken;
 
-    try {
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ error: 'User not found' });
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
-
-        if (!user.isEmailVerified) {
-            return res.status(403).json({ error: 'Please verify your email before logging in.' });
-        }
-
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        otps.set(email, { otp, expires: Date.now() + 5 * 60 * 1000 });
-
-        await sendOtpEmail(email, otp);
-
-        return res.status(200).json({ message: 'OTP sent to email', requireOTP: true, email });
-    } catch (err) {
-        console.error('Login error:', err);
-        res.status(500).json({ error: 'Something went wrong. Please try again.' });
-    }
-};
-
-export const verifyOtp = async (req, res) => {
-    const { email, otp } = req.body;
-    const record = otps.get(email);
-
-    if (!record) return res.status(400).json({ message: 'No OTP found. Please log in again.' });
-    if (record.otp !== otp) return res.status(400).json({ message: 'Invalid OTP.' });
-    if (Date.now() > record.expires) {
-        otps.delete(email);
-        return res.status(400).json({ message: 'OTP expired. Please login again.' });
-    }
-
-    otps.delete(email);
-
-    const user = await User.findOne({ email });
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
-
-    let redirectUrl = user.role === 'admin' ? '/admin' : '/client';
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    otps.set(email, { otp, expires: Date.now() + 5 * 60 * 1000 });
+    await sendOtpEmail(email, otp);
 
     res.status(200).json({
-        token,
-        user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-        },
-        redirectUrl,
+      message: "Login successful. OTP sent to email.",
+      requireOTP: true,
+      email,
+      accessToken,
     });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// ---------------- Verify OTP ----------------
+export const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  const record = otps.get(email);
+  if (!record) return res.status(400).json({ message: "No OTP found. Please login again." });
+  if (record.otp !== otp) return res.status(400).json({ message: "Invalid OTP." });
+  if (Date.now() > record.expires) {
+    otps.delete(email);
+    return res.status(400).json({ message: "OTP expired. Please login again." });
+  }
+  otps.delete(email);
+
+  // Scan by email to get user id
+  const scanResult = await dynamoDB.send(new ScanCommand({
+    TableName: USER_TABLE,
+    FilterExpression: "#email = :email",
+    ExpressionAttributeNames: { "#email": "email" },
+    ExpressionAttributeValues: { ":email": email },
+  }));
+  const user = scanResult.Items[0];
+  if (!user) return res.status(404).json({ message: "User not found." });
+
+  const token = jwt.sign({ email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+  const redirectUrl = user.role === "admin" ? "/admin" : "/client";
+
+  res.status(200).json({
+    token,
+    user: { email: user.email, name: user.name, role: user.role },
+    redirectUrl,
+  });
+};
+
+// ---------------- Update Profile ----------------
+export const updateProfile = async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ message: "No token provided" });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const email = decoded.email;
+
+    // Scan to get user id
+    const scanResult = await dynamoDB.send(new ScanCommand({
+      TableName: USER_TABLE,
+      FilterExpression: "#email = :email",
+      ExpressionAttributeNames: { "#email": "email" },
+      ExpressionAttributeValues: { ":email": email },
+    }));
+    const user = scanResult.Items[0];
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const { name, password, confirmPassword } = req.body;
+    const updates = {};
+    if (name && name !== user.name) updates.name = name;
+    if (password) {
+      if (password !== confirmPassword) return res.status(400).json({ message: "Passwords do not match" });
+      updates.password = await bcrypt.hash(password, 10);
+    }
+
+    if (Object.keys(updates).length > 0) {
+      const updateExp = "SET " + Object.keys(updates).map(k => `#${k} = :${k}`).join(", ");
+      const exprAttrNames = Object.fromEntries(Object.keys(updates).map(k => [`#${k}`, k]));
+      const exprAttrValues = Object.fromEntries(Object.entries(updates).map(([k, v]) => [`:${k}`, v]));
+
+      await dynamoDB.send(
+        new UpdateCommand({
+          TableName: USER_TABLE,
+          Key: { id: user.id },
+          UpdateExpression: updateExp,
+          ExpressionAttributeNames: exprAttrNames,
+          ExpressionAttributeValues: exprAttrValues,
+        })
+      );
+    }
+
+    res.json({ message: "Profile updated successfully" });
+  } catch (err) {
+    res.status(401).json({ message: "Invalid token", error: err.message });
+  }
 };
